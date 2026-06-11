@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Channeltivity — Implementation Status Report</title>
+<title></title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -327,7 +327,7 @@
   <div class="screen" id="screen-report">
     <div class="report-actions">
       <button class="btn" onclick="backToForm()">&#8592; Edit</button>
-      <button class="btn btn-primary" onclick="window.print()">&#128438; Print / Save as PDF</button>
+      <button class="bt<button class="btn btn-primary" onclick="doPrint()">&#128438; Print / Save as PDF</button>n btn-primary" onclick="window.print()">&#128438; Print / Save as PDF</button>
     </div>
     <div class="report" id="report-output"></div>
   </div>
@@ -538,7 +538,12 @@
     el.textContent = msg;
     el.className = "msg" + (type === "error" ? " msg-error" : type === "success" ? " msg-success" : "");
   }
-
+function doPrint() {
+  const prev = document.title;
+  document.title = '';
+  window.print();
+  document.title = prev;
+}
   loadProjects();
 </script>
 </body>
