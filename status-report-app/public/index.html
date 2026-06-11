@@ -406,7 +406,13 @@
     }
   }
 
-  function previewOnly() { renderReport(); }
+  function previewOnly() {
+    if (!currentProjectName) {
+      const sel = document.getElementById("project-select");
+      currentProjectName = sel.options[sel.selectedIndex]?.text || "Project";
+    }
+    renderReport();
+  }
 
   function renderReport() {
     const d = getFormData();
