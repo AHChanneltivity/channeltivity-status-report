@@ -192,13 +192,31 @@
 
   /* ── PRINT ── */
   @media print {
-    body { background: white; }
-    .app-header, .selector-card, .form-card, .report-actions { display: none !important; }
-    .screen { display: block !important; }
-    #screen-form { display: none !important; }
-    .report { border: none; }
-    .app-body { margin: 0; padding: 0; max-width: 100%; }
+  @page {
+    size: letter;
+    margin: 0.5in 0.55in;
   }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: white; margin: 0; }
+  .app-header, .selector-card, .form-card, .report-actions { display: none !important; }
+  .screen { display: block !important; }
+  #screen-form { display: none !important; }
+  .app-body { margin: 0; padding: 0; max-width: 100%; }
+  .report { border: 1px solid #D4DDED; border-radius: 0; }
+  .report-header { border-radius: 0; background: #2F61AD !important; padding: 10px 16px; }
+  .rh-left { font-size: 13px; }
+  .report-body { grid-template-columns: 210px 1px 1fr; }
+  .report-col { padding: 10px 14px; }
+  .rl { margin-bottom: 4px; }
+  .status-pill { margin-bottom: 6px; padding: 2px 10px; }
+  .golive-row { margin-bottom: 8px; }
+  .r-divider { margin: 7px 0; }
+  .phase-row { padding: 3px 0; }
+  .rsec { margin-bottom: 8px; }
+  .bullet { margin-bottom: 2px; }
+  .dec-row { margin-bottom: 3px; }
+  .report-footer { padding: 5px 16px; background: #F4F6FA !important; }
+}
 </style>
 </head>
 <body>
