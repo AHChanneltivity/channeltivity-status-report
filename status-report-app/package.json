@@ -1,0 +1,11 @@
+{
+  "name": "channeltivity-status-report",
+  "version": "1.0.0",
+  "description": "Channeltivity implementation status report generator",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.15"
+  }
+}

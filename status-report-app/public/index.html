@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Channeltivity — Implementation Status Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #2F61AD;
+    --blue-dark: #265196;
+    --blue-light: #E8EFF9;
+    --blue-muted: #B8CEED;
+    --green: #8CC541;
+    --green-dark: #6B9C2E;
+    --green-bg: #EBF5D6;
+    --green-text: #4A7A1E;
+    --green-border: #B5D97A;
+    --amber: #F59E0B;
+    --amber-bg: #FEF3C7;
+    --amber-text: #92600A;
+    --amber-border: #FBD65B;
+    --red: #DC2626;
+    --red-bg: #FEE2E2;
+    --red-text: #991B1B;
+    --red-border: #FCA5A5;
+    --text: #231F20;
+    --text-mid: #374151;
+    --text-muted: #6B7280;
+    --text-light: #9CA3AF;
+    --bg: #F4F6FA;
+    --bg-card: #ffffff;
+    --border: #D4DDED;
+    --border-light: #E5EBF4;
+    --radius: 8px;
+    --radius-lg: 10px;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-mid);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: var(--blue);
+    padding: 13px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .app-header-logo { display: flex; align-items: center; gap: 10px; }
+  .app-header-name { font-size: 15px; font-weight: 600; color: #fff; }
+  .app-header-sub { font-size: 12px; color: var(--blue-muted); margin-left: auto; }
+
+  .app-body { max-width: 980px; margin: 28px auto; padding: 0 24px 64px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    margin-bottom: 14px;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+
+  /* ── FORM ELEMENTS ── */
+  label {
+    font-size: 10px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .05em;
+    display: block; margin-bottom: 5px;
+  }
+  select, input[type="date"], input[type="text"], textarea {
+    width: 100%; padding: 8px 11px; font-size: 13px;
+    font-family: Arial, sans-serif;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-card); color: var(--text); outline: none;
+    transition: border-color .15s;
+  }
+  select:focus, input:focus, textarea:focus { border-color: var(--blue); }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+  .section-label {
+    font-size: 10px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .05em;
+    display: block; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 14px; margin-top: 6px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    padding: 9px 18px; font-size: 13px; font-weight: 600;
+    font-family: Arial, sans-serif; border-radius: var(--radius);
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--bg-card); color: var(--text);
+    transition: background .15s;
+  }
+  .btn:hover { background: var(--bg); }
+  .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+
+  .msg { font-size: 12px; margin-top: 8px; }
+  .msg-error { color: var(--red); }
+  .msg-success { color: var(--green-text); }
+
+  /* ── SCREEN SWITCHING ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── REPORT ── */
+  .report-actions { display: flex; gap: 10px; margin-bottom: 16px; }
+
+  .report {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .report-header {
+    background: var(--blue);
+    padding: 13px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .rh-left  { font-size: 15px; font-weight: 600; color: #fff; }
+  .rh-mid   { font-size: 12px; color: var(--blue-muted); }
+  .rh-right { font-size: 12px; color: var(--blue-muted); }
+
+  .report-body {
+    display: grid;
+    grid-template-columns: 240px 1px 1fr;
+    background: var(--bg-card);
+  }
+  .report-col { padding: 16px 18px; }
+  .report-divider { background: var(--border); }
+
+  .rl {
+    font-size: 9px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--text-muted); margin-bottom: 7px;
+  }
+
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; margin-bottom: 10px;
+  }
+  .pill-green { background: var(--green-bg); color: var(--green-text); border: 1px solid var(--green-border); }
+  .pill-amber { background: var(--amber-bg); color: var(--amber-text); border: 1px solid var(--amber-border); }
+  .pill-red   { background: var(--red-bg);   color: var(--red-text);   border: 1px solid var(--red-border); }
+
+  .golive-row { font-size: 12px; color: var(--text-muted); margin-bottom: 13px; }
+  .golive-row strong { color: var(--text); }
+
+  .r-divider { border: none; border-top: 1px solid var(--border-light); margin: 11px 0; }
+
+  .phase-row {
+    display: flex; align-items: center;
+    justify-content: space-between; padding: 5px 0; font-size: 12px;
+  }
+  .phase-left { display: flex; align-items: center; gap: 8px; }
+  .pdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .dot-complete { background: var(--green); }
+  .dot-progress { background: var(--amber); }
+  .dot-upcoming { background: #CBD5E1; }
+  .dot-na       { background: #CBD5E1; }
+  .name-upcoming { color: var(--text-muted); }
+  .name-active   { color: var(--text); }
+  .st-complete { font-size: 11px; color: var(--green-text); }
+  .st-progress { font-size: 11px; color: var(--amber-text); }
+  .st-upcoming { font-size: 11px; color: var(--text-light); }
+
+  .rsec { margin-bottom: 13px; }
+  .bullet { display: flex; gap: 6px; font-size: 12px; color: var(--text-mid); margin-bottom: 4px; line-height: 1.5; }
+  .bdot { color: var(--text-light); flex-shrink: 0; }
+  .dec-row { display: flex; gap: 7px; font-size: 12px; color: var(--text-mid); margin-bottom: 5px; }
+  .dec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); flex-shrink: 0; margin-top: 3px; }
+  .none-text { font-size: 12px; color: var(--text-light); font-style: italic; }
+
+  .report-footer {
+    background: var(--blue-light);
+    padding: 8px 20px; font-size: 10px; color: var(--text-muted);
+    text-align: center; border-top: 1px solid var(--border);
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; }
+    .app-header, .selector-card, .form-card, .report-actions { display: none !important; }
+    .screen { display: block !important; }
+    #screen-form { display: none !important; }
+    .report { border: none; }
+    .app-body { margin: 0; padding: 0; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-header-logo">
+    <svg width="22" height="22" viewBox="0 0 83 93" fill="none" aria-hidden="true">
+      <path d="M41.3 93C40.8 93 40.3 92.9 39.8 92.6L2.2 70.8C1.2 70.3 0.7 69.3 0.7 68.2V24.7C0.7 23.7 1.2 22.7 2.2 22.1L39.8 0.4C40.8-0.1 41.9-0.1 42.8 0.4L80.5 22.1C81.9 22.9 82.4 24.8 81.6 26.2C80.8 27.6 79 28.2 77.5 27.3L41.3 6.5L6.7 26.5V66.5L41.3 86.5L77.5 65.6C79 64.8 80.8 65.3 81.6 66.7C82.4 68.2 81.9 70 80.5 70.8L42.8 92.6C42.4 92.9 41.8 93 41.3 93Z" fill="white"/>
+      <path d="M70.1 30.3C69.3 28.8 67.4 28.4 66 29.2C60.4 32.4 46.1 40.6 41.5 43.3C36.9 40.6 22.6 32.4 17 29.2C15.6 28.4 13.7 28.8 12.9 30.3C12.1 31.7 12.6 33.5 14 34.4L36.9 47.6C37.5 47.9 38 48.2 38.5 48.5V75.4C38.5 77.1 39.9 78.4 41.5 78.4C43.2 78.4 44.5 77.1 44.5 75.4V48.5C45 48.2 45.5 47.9 46.1 47.6L69 34.4C70.4 33.5 70.9 31.7 70.1 30.3Z" fill="#8CC541"/>
+    </svg>
+    <span class="app-header-name">Channeltivity</span>
+  </div>
+  <span class="app-header-sub">Implementation Status Report</span>
+</div>
+
+<div class="app-body">
+
+  <!-- SCREEN: FORM -->
+  <div class="screen active" id="screen-form">
+
+    <!-- Project selector -->
+    <div class="card selector-card">
+      <div class="card-title">Select project</div>
+      <div class="grid-3">
+        <div>
+          <label for="project-select">Project</label>
+          <select id="project-select">
+            <option value="">Loading projects...</option>
+          </select>
+        </div>
+        <div>
+          <label for="week-of">Week of</label>
+          <input type="date" id="week-of">
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-primary" style="width:100%" onclick="loadProject()">Load project</button>
+        </div>
+      </div>
+      <div id="selector-msg" class="msg"></div>
+    </div>
+
+    <!-- Edit form -->
+    <div class="card form-card" id="form-card" style="display:none">
+      <div class="card-title" id="form-title">Status Report</div>
+
+      <span class="section-label">Overall status</span>
+      <div class="grid-3" style="margin-bottom:18px">
+        <div>
+          <label for="f-status">Status</label>
+          <select id="f-status">
+            <option>On Track</option>
+            <option>At Risk</option>
+            <option>Blocked</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-golive">Target go-live</label>
+          <input type="date" id="f-golive">
+        </div>
+      </div>
+
+      <span class="section-label">Phase progress</span>
+      <div class="grid-3" style="margin-bottom:18px">
+        <div><label for="f-p1">Portal setup</label>
+          <select id="f-p1"><option>Upcoming</option><option>In Progress</option><option>Complete</option></select></div>
+        <div><label for="f-p2">Groups &amp; permissions</label>
+          <select id="f-p2"><option>Upcoming</option><option>In Progress</option><option>Complete</option></select></div>
+        <div><label for="f-p3">Module config</label>
+          <select id="f-p3"><option>Upcoming</option><option>In Progress</option><option>Complete</option></select></div>
+        <div><label for="f-p4">CRM integration</label>
+          <select id="f-p4"><option>Upcoming</option><option>In Progress</option><option>Complete</option><option>N/A</option></select></div>
+        <div><label for="f-p5">UAT &amp; training</label>
+          <select id="f-p5"><option>Upcoming</option><option>In Progress</option><option>Complete</option></select></div>
+        <div><label for="f-p6">Go-live</label>
+          <select id="f-p6"><option>Upcoming</option><option>In Progress</option><option>Complete</option></select></div>
+      </div>
+
+      <span class="section-label">Updates</span>
+      <div class="grid-2">
+        <div>
+          <label for="f-thisweek">This week <span style="font-size:10px;text-transform:none;letter-spacing:0;font-weight:400">(one item per line)</span></label>
+          <textarea id="f-thisweek" placeholder="Configure deal registration module&#10;Review partner tier groups"></textarea>
+        </div>
+        <div>
+          <label for="f-nextweek">Next week <span style="font-size:10px;text-transform:none;letter-spacing:0;font-weight:400">(one item per line)</span></label>
+          <textarea id="f-nextweek" placeholder="Begin CRM integration scoping&#10;Home page and widget configuration"></textarea>
+        </div>
+        <div>
+          <label for="f-decisions">Decisions needed <span style="font-size:10px;text-transform:none;letter-spacing:0;font-weight:400">(one per line)</span></label>
+          <textarea id="f-decisions" placeholder="Confirm CRM admin availability&#10;Finalize partner tier structure"></textarea>
+        </div>
+        <div>
+          <label for="f-risks">Risks &amp; blockers <span style="font-size:10px;text-transform:none;letter-spacing:0;font-weight:400">(leave blank if none)</span></label>
+          <textarea id="f-risks" placeholder="Leave blank if no active blockers"></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveAndPreview()">Save to Notion &amp; preview</button>
+        <button class="btn" onclick="previewOnly()">Preview only</button>
+      </div>
+      <div id="form-msg" class="msg"></div>
+    </div>
+
+  </div>
+
+  <!-- SCREEN: REPORT -->
+  <div class="screen" id="screen-report">
+    <div class="report-actions">
+      <button class="btn" onclick="backToForm()">&#8592; Edit</button>
+      <button class="btn btn-primary" onclick="window.print()">&#128438; Print / Save as PDF</button>
+    </div>
+    <div class="report" id="report-output"></div>
+  </div>
+
+</div>
+
+<script>
+  let currentProjectId = null;
+  let currentProjectName = "";
+
+  document.getElementById("week-of").value = new Date().toISOString().split("T")[0];
+
+  async function loadProjects() {
+    try {
+      const res = await fetch("/api/projects");
+      const json = await res.json();
+      const sel = document.getElementById("project-select");
+      sel.innerHTML = '<option value="">— Select a project —</option>';
+      (json.projects || []).forEach(p => {
+        const o = document.createElement("option");
+        o.value = p.id; o.textContent = p.name;
+        sel.appendChild(o);
+      });
+    } catch(e) {
+      document.getElementById("project-select").innerHTML = '<option value="">Error loading projects</option>';
+    }
+  }
+
+  async function loadProject() {
+    const id = document.getElementById("project-select").value;
+    if (!id) { showMsg("selector-msg", "Please select a project.", "error"); return; }
+    showMsg("selector-msg", "Loading...", "");
+    try {
+      const res = await fetch(`/api/project?id=${id}`);
+      const json = await res.json();
+      if (json.error) { showMsg("selector-msg", json.error, "error"); return; }
+      const d = json.data;
+      currentProjectId = d.id;
+      currentProjectName = d.projectName;
+      document.getElementById("form-title").textContent = d.projectName + " — Status Report";
+      setVal("f-status",    d.overallStatus  || "On Track");
+      setDate("f-golive",   d.targetGoLive);
+      setVal("f-p1",        d.portalSetup    || "Upcoming");
+      setVal("f-p2",        d.groupsPerms    || "Upcoming");
+      setVal("f-p3",        d.moduleConfig   || "Upcoming");
+      setVal("f-p4",        d.crmIntegration || "Upcoming");
+      setVal("f-p5",        d.uatTraining    || "Upcoming");
+      setVal("f-p6",        d.goLiveStatus   || "Upcoming");
+      document.getElementById("f-thisweek").value  = d.thisWeek        || "";
+      document.getElementById("f-nextweek").value  = d.nextWeek        || "";
+      document.getElementById("f-decisions").value = d.decisionsNeeded || "";
+      document.getElementById("f-risks").value     = d.risksBlockers   || "";
+      document.getElementById("form-card").style.display = "block";
+      document.getElementById("screen-report").classList.remove("active");
+      showMsg("selector-msg", "", "");
+    } catch(e) {
+      showMsg("selector-msg", "Failed to load: " + e.message, "error");
+    }
+  }
+
+  async function saveAndPreview() {
+    if (!currentProjectId) return;
+    showMsg("form-msg", "Saving to Notion...", "");
+    try {
+      const res = await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: currentProjectId, ...getFormData() })
+      });
+      const json = await res.json();
+      if (json.error) { showMsg("form-msg", json.error, "error"); return; }
+      showMsg("form-msg", "Saved.", "success");
+      renderReport();
+    } catch(e) {
+      showMsg("form-msg", "Save failed: " + e.message, "error");
+    }
+  }
+
+  function previewOnly() { renderReport(); }
+
+  function renderReport() {
+    const d = getFormData();
+    const weekOf = fmtDate(document.getElementById("week-of").value);
+    const phases = [
+      { label: "Portal setup",         val: d.portalSetup },
+      { label: "Groups & permissions",  val: d.groupsPerms },
+      { label: "Module config",         val: d.moduleConfig },
+      { label: "CRM integration",       val: d.crmIntegration },
+      { label: "UAT & training",         val: d.uatTraining },
+      { label: "Go-live",               val: d.goLiveStatus },
+    ];
+
+    document.getElementById("report-output").innerHTML = `
+      <div class="report-header">
+        <div class="rh-left">${currentProjectName}</div>
+        <div class="rh-mid">Implementation Status</div>
+        <div class="rh-right">Week of ${weekOf}</div>
+      </div>
+      <div class="report-body">
+        <div class="report-col">
+          <div class="rl">Overall status</div>
+          <div class="status-pill ${pillClass(d.overallStatus)}">${pillLabel(d.overallStatus)}</div>
+          <div class="golive-row">Target go-live: <strong>${fmtDate(d.targetGoLive)}</strong></div>
+          <div class="r-divider"></div>
+          <div class="rl">Phase progress</div>
+          ${phases.map(p => phaseRow(p.label, p.val)).join("")}
+        </div>
+        <div class="report-divider"></div>
+        <div class="report-col">
+          <div class="rsec">
+            <div class="rl">This week</div>
+            ${toLines(d.thisWeek)}
+          </div>
+          <div class="r-divider"></div>
+          <div class="rsec">
+            <div class="rl">Next week</div>
+            ${toLines(d.nextWeek)}
+          </div>
+          <div class="r-divider"></div>
+          <div class="rsec">
+            <div class="rl">Decisions needed</div>
+            ${toDecisions(d.decisionsNeeded)}
+          </div>
+          <div class="r-divider"></div>
+          <div class="rsec">
+            <div class="rl">Risks &amp; blockers</div>
+            ${d.risksBlockers.trim()
+              ? `<div class="bullet"><span class="bdot">·</span><span>${d.risksBlockers.trim()}</span></div>`
+              : '<span class="none-text">No active blockers</span>'}
+          </div>
+        </div>
+      </div>
+      <div class="report-footer">Channeltivity Implementation &nbsp;·&nbsp; Confidential</div>
+    `;
+
+    document.getElementById("screen-form").classList.remove("active");
+    document.getElementById("screen-report").classList.add("active");
+    window.scrollTo(0, 0);
+  }
+
+  function backToForm() {
+    document.getElementById("screen-report").classList.remove("active");
+    document.getElementById("screen-form").classList.add("active");
+  }
+
+  function getFormData() {
+    return {
+      overallStatus:   document.getElementById("f-status").value,
+      targetGoLive:    document.getElementById("f-golive").value,
+      portalSetup:     document.getElementById("f-p1").value,
+      groupsPerms:     document.getElementById("f-p2").value,
+      moduleConfig:    document.getElementById("f-p3").value,
+      crmIntegration:  document.getElementById("f-p4").value,
+      uatTraining:     document.getElementById("f-p5").value,
+      goLiveStatus:    document.getElementById("f-p6").value,
+      thisWeek:        document.getElementById("f-thisweek").value,
+      nextWeek:        document.getElementById("f-nextweek").value,
+      decisionsNeeded: document.getElementById("f-decisions").value,
+      risksBlockers:   document.getElementById("f-risks").value,
+    };
+  }
+
+  function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (!el || !val) return;
+    for (let o of el.options) { if (o.value === val || o.text === val) { el.value = o.value; break; } }
+  }
+  function setDate(id, val) { const el = document.getElementById(id); if (el && val) el.value = val; }
+  function fmtDate(s) {
+    if (!s) return "—";
+    const d = new Date(s + "T00:00:00");
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+  function pillClass(v) {
+    if (v === "On Track") return "pill-green";
+    if (v === "At Risk")  return "pill-amber";
+    return "pill-red";
+  }
+  function pillLabel(v) {
+    if (v === "On Track") return "● On Track";
+    if (v === "At Risk")  return "● At Risk";
+    return "● Blocked";
+  }
+  function phaseRow(label, val) {
+    const dot = val === "Complete" ? "dot-complete" : val === "In Progress" ? "dot-progress" : "dot-upcoming";
+    const name = (val === "Upcoming" || val === "N/A") ? "name-upcoming" : "name-active";
+    const st = val === "Complete" ? "st-complete" : val === "In Progress" ? "st-progress" : "st-upcoming";
+    return `<div class="phase-row">
+      <div class="phase-left"><div class="pdot ${dot}"></div><span class="${name}">${label}</span></div>
+      <span class="${st}">${val || "Upcoming"}</span>
+    </div>`;
+  }
+  function toLines(s) {
+    if (!s || !s.trim()) return '<span class="none-text">None noted</span>';
+    return s.trim().split("\n").filter(l => l.trim()).map(l =>
+      `<div class="bullet"><span class="bdot">·</span><span>${l.trim()}</span></div>`
+    ).join("");
+  }
+  function toDecisions(s) {
+    if (!s || !s.trim()) return '<span class="none-text">None at this time</span>';
+    return s.trim().split("\n").filter(l => l.trim()).map(l =>
+      `<div class="dec-row"><div class="dec-dot"></div><span>${l.trim()}</span></div>`
+    ).join("");
+  }
+  function showMsg(id, msg, type) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.className = "msg" + (type === "error" ? " msg-error" : type === "success" ? " msg-success" : "");
+  }
+
+  loadProjects();
+</script>
+</body>
+</html>
