@@ -10,14 +10,14 @@ module.exports = async (req, res) => {
   try {
     const response = await notion.databases.query({
       database_id: DATABASE_ID,
-      sorts: [{ property: "Project Name", direction: "ascending" }],
+      sorts: [{ property: "Project name", direction: "ascending" }],
     });
 
     const projects = response.results.map((page) => {
       const props = page.properties;
       return {
         id: page.id,
-        name: getTitle(props["Project Name"]),
+        name: getTitle(props["Project name"]),
       };
     });
 

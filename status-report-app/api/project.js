@@ -15,8 +15,8 @@ module.exports = async (req, res) => {
 
     const data = {
       id: page.id,
-      projectName:    getTitle(props["Project Name"]),
-      targetGoLive:   getDate(props["Target Go-Live"]),
+      projectName:    getTitle(props["Project name"]),
+      targetGoLive:   getDate(props["Target go live Date"]),
       overallStatus:  getSelect(props["Overall Status"]),
       portalSetup:    getSelect(props["Portal Setup"]),
       groupsPerms:    getSelect(props["Groups & Permissions"]),
